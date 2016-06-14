@@ -4,7 +4,7 @@
   hosts: all
 
   roles:
-    - name: ansible-city.php
+    - name: sansible.php
 
   post_tasks:
     - name: PHP should be installed
@@ -16,12 +16,12 @@
   hosts: all
 
   roles:
-    - name: ansible-city.users_and_groups
+    - name: sansible.users_and_groups
       users_and_groups:
         users:
           - name: php_tester
 
-    - name: ansible-city.php
+    - name: sansible.php
       php:
         fpm:
           user: php_tester

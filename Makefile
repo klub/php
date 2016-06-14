@@ -1,39 +1,47 @@
+.DEFAULT_GOAL := help
+.PHONY: help
 
-BRANCH?=$(shell git rev-parse --abbrev-ref HEAD)
+## Run tests on any file change
+watch: test_deps
+	while sleep 1; do \
+		find defaults/ meta/ tasks/ templates/ tests/test.yml tests/vagrant/Vagrantfile \
+		| entr -d make vagrant; \
+	done
 
-all: test clean
-
-test: test_deps vagrant_up
-
-integration_test: clean integration_test_deps vagrant_up clean
+## Run test
+test: test_deps vagrant
 
 test_deps:
-	rm -rf tests/vagrant/ansible-city.*
-	ln -s ../.. tests/vagrant/ansible-city.php
-	ansible-galaxy install --force -p tests/vagrant -r tests/vagrant/local_requirements.yml
+	rm -f tests/sansible.php
+	ln -s .. tests/sansible.php
 
-integration_test_deps:
-	sed -i.bak \
-		-E 's/(.*)version: (.*)/\1version: origin\/$(BRANCH)/' \
-		tests/vagrant/integration_requirements.yml
-	rm -rf tests/vagrant/ansible-city.*
-	ansible-galaxy install -p tests/vagrant -r tests/vagrant/integration_requirements.yml
-	mv tests/vagrant/integration_requirements.yml.bak tests/vagrant/integration_requirements.yml
+## Start and (re)provisiom Vagrant test box
+vagrant:
+	cd tests/vagrant && vagrant up --no-provision
+	cd tests/vagrant && vagrant provision
 
-vagrant_up:
-	@cd tests/vagrant; \
-	if (vagrant status | grep -E "(running|saved|poweroff)" 1>/dev/null) then \
-		vagrant up || exit 1; \
-		vagrant provision || exit 1; \
-	else \
-		vagrant up || exit 1; \
-	fi;
+## Execute simple Vagrant command
+# Example: make vagrant_ssh
+#          make vagrant_halt
+vagrant_%:
+	cd tests/vagrant && vagrant $(subst vagrant_,,$@)
 
-vagrant_ssh:
-	@cd tests/vagrant; \
-	vagrant up || exit 1; \
-	vagrant ssh
+## Lint role
+# You need to install ansible-lint
+lint:
+	find defaults/ meta/ tasks/ templates/ -name "*.yml" | xargs -I{} ansible-lint {}
+	ansible-playbook --syntax-check --list-tasks -i tests/inventory tests/test.yml
 
+## Clean up
 clean:
-	rm -rf tests/vagrant/ansible-city.*
+	rm -rf tests/sansible.*
 	cd tests/vagrant && vagrant destroy
+
+## Prints this help
+help:
+	@grep -h -E '^#' -A 1 $(MAKEFILE_LIST) | grep -v "-" | \
+	awk 'BEGIN{ doc_mode=0; doc=""; doc_h=""; FS="#" } { \
+		if (""!=$$3) { doc_mode=2 } \
+		if (match($$1, /^[%.a-zA-Z_-]+:/) && doc_mode==1) { sub(/:.*/, "", $$1); printf "\033[34m%-30s\033[0m\033[1m%s\033[0m %s\n\n", $$1, doc_h, doc; doc_mode=0; doc="" } \
+		if (doc_mode==1) { $$1=""; doc=doc "\n" $$0 } \
+		if (doc_mode==2) { doc_mode=1; doc_h=$$3 } }'

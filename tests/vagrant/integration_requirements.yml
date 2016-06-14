@@ -1,4 +1,4 @@
 ---
 
-- name: ansible-city.php
+- name: sansible.php
   version: v1.0

@@ -2,20 +2,28 @@
 
 php:
   # List of extra PHP packages to install
+  version: php5
   extras: []
   pecl: []
+  compiled: []
   modules:
     - php5-curl
     - php5-intl
     - php5-mcrypt
     - php5-mysql
     - php5-pgsql
+    - php5-mssql
     - php5-sqlite
+    # removed due to doctrine trying to use memcache or redis by default to cache
+    # - php5-redis
+    # - php5-memcache
   paths:
     etc: /etc/php5
+    fpm_pool: /etc/php5/fpm/pool.d
 
   # In order to configure custom FPM process, please check README
   fpm:
+    bin: php5-fpm
     port: 9000
     max_children: 100
     start_servers: 2
