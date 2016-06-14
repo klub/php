@@ -30,7 +30,7 @@ vagrant_%:
 # You need to install ansible-lint
 lint:
 	find defaults/ meta/ tasks/ templates/ -name "*.yml" | xargs -I{} ansible-lint {}
-	ansible-playbook --syntax-check --list-tasks -i tests/inventory tests/test.yml
+	ansible-playbook --syntax-check --list-tasks -i tests/vagrant/inventory tests/vagrant/test.yml
 
 ## Clean up
 clean:
